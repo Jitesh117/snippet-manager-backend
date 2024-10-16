@@ -29,6 +29,8 @@ func HandleSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch r.Method {
+	case http.MethodGet:
+		getSnippetByID(w, r, snippetID)
 	case http.MethodPut:
 		updateSnippetByID(w, r, snippetID)
 	default:
@@ -42,6 +44,7 @@ func getAllSnippets(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to get snippets", http.StatusInternalServerError)
 		return
 	}
+	log.Println("Got all Snippets")
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(snippets)
 }
@@ -63,6 +66,7 @@ func createSnippets(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+	log.Println("Created snippet!")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(snippet)
 }
@@ -86,6 +90,18 @@ func updateSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UU
 		return
 	}
 
+	log.Println("Updated snippet!")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(snippet)
+}
+
+func getSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID) {
+	snippet, err := database.GetSnippetByID(snippetID)
+	if err != nil {
+		http.Error(w, "Failed to get snippet", http.StatusInternalServerError)
+		log.Println(err)
+	}
+	log.Println("Snippet fetched from ID")
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(snippet)
 }
