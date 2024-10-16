@@ -7,6 +7,7 @@ import (
 
 	"github.com/Jitesh117/snippet-manager/database"
 	"github.com/Jitesh117/snippet-manager/models"
+	"github.com/google/uuid"
 )
 
 func HandleSnippets(w http.ResponseWriter, r *http.Request) {
@@ -15,6 +16,23 @@ func HandleSnippets(w http.ResponseWriter, r *http.Request) {
 		getAllSnippets(w, r)
 	case http.MethodPost:
 		createSnippets(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func HandleSnippet(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Path[len("/snippets/"):]
+	snippetID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+	switch r.Method {
+	case http.MethodPut:
+		updateSnippetByID(w, r, snippetID)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
@@ -46,5 +64,28 @@ func createSnippets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(snippet)
+}
+
+func updateSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID) {
+	var requestSnippet models.Snippet
+	if err := json.NewDecoder(r.Body).Decode(&requestSnippet); err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	snippet, err := database.UpdateSnippet(
+		requestSnippet.Title,
+		requestSnippet.Language,
+		requestSnippet.Content,
+		snippetID,
+	)
+	if err != nil {
+		http.Error(w, "failed to update snippet", http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(snippet)
 }

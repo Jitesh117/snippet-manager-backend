@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/Jitesh117/snippet-manager/models"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -87,5 +88,34 @@ func CreateSnippet(title string, language string, content string) (models.Snippe
 	if err != nil {
 		return models.Snippet{}, err
 	}
+	return snippet, nil
+}
+
+func UpdateSnippet(
+	title string,
+	language string,
+	content string,
+	snippetId uuid.UUID,
+) (models.Snippet, error) {
+	var snippet models.Snippet
+	query := `
+		UPDATE snippets 
+		SET title = $1, language = $2, content = $3, updated_at = NOW() AT TIME ZONE 'UTC'
+		WHERE snippet_id = $4 
+		RETURNING snippet_id, title, language, content, created_at, updated_at
+	`
+
+	err := DB.QueryRow(query, title, language, content, snippetId).Scan(
+		&snippet.SnippetId,
+		&snippet.Title,
+		&snippet.Language,
+		&snippet.Content,
+		&snippet.CreatedAt,
+		&snippet.UpdatedAt,
+	)
+	if err != nil {
+		return models.Snippet{}, err
+	}
+
 	return snippet, nil
 }
