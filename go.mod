@@ -1,4 +1,4 @@
-module github.com/Jitesh117/snippet-manager
+module github.com/Jitesh117/snippet-manager-backend
 
 go 1.22.4
 

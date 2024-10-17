@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Jitesh117/snippet-manager/database"
-	"github.com/Jitesh117/snippet-manager/handlers"
+	"github.com/Jitesh117/snippet-manager-backend/database"
+	"github.com/Jitesh117/snippet-manager-backend/handlers"
 )
 
 func main() {

@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/Jitesh117/snippet-manager/models"
+	"github.com/Jitesh117/snippet-manager-backend/models"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"

@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Jitesh117/snippet-manager/database"
-	auth "github.com/Jitesh117/snippet-manager/middleware"
-	"github.com/Jitesh117/snippet-manager/models"
+	"github.com/Jitesh117/snippet-manager-backend/database"
+	auth "github.com/Jitesh117/snippet-manager-backend/middleware"
+	"github.com/Jitesh117/snippet-manager-backend/models"
 	"github.com/google/uuid"
 )
 
