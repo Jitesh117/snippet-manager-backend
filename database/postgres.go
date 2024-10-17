@@ -115,8 +115,18 @@ func UpdateSnippet(
 	title string,
 	language string,
 	content string,
-	snippetId uuid.UUID,
+	snippetID uuid.UUID,
+	userID uuid.UUID,
 ) (models.Snippet, error) {
+	var realUserID uuid.UUID
+	verifyQuery := "SELECT user_id FROM snippets WHERE snippet_id = $1"
+	err := DB.QueryRow(verifyQuery, snippetID).Scan(&realUserID)
+	if err != nil {
+		return models.Snippet{}, err
+	}
+	if realUserID != userID {
+		return models.Snippet{}, fmt.Errorf("access denied")
+	}
 	var snippet models.Snippet
 	query := `
 		UPDATE snippets 
@@ -125,7 +135,7 @@ func UpdateSnippet(
 		RETURNING snippet_id, title, language, content, created_at, updated_at
 	`
 
-	err := DB.QueryRow(query, title, language, content, snippetId).Scan(
+	err = DB.QueryRow(query, title, language, content, snippetID).Scan(
 		&snippet.SnippetId,
 		&snippet.Title,
 		&snippet.Language,
@@ -140,11 +150,20 @@ func UpdateSnippet(
 	return snippet, nil
 }
 
-func GetSnippetByID(snippetID uuid.UUID) (models.Snippet, error) {
+func GetSnippetByID(snippetID uuid.UUID, userID uuid.UUID) (models.Snippet, error) {
+	var realUserID uuid.UUID
+	verifyQuery := "SELECT user_id FROM snippets WHERE snippet_id = $1"
+	err := DB.QueryRow(verifyQuery, snippetID).Scan(&realUserID)
+	if err != nil {
+		return models.Snippet{}, err
+	}
+	if realUserID != userID {
+		return models.Snippet{}, fmt.Errorf("access denied")
+	}
 	var snippet models.Snippet
 	query := "SELECT snippet_id, title, language, content, created_at, updated_at FROM snippets WHERE snippet_id = $1"
 
-	err := DB.QueryRow(query, snippetID).Scan(
+	err = DB.QueryRow(query, snippetID).Scan(
 		&snippet.SnippetId,
 		&snippet.Title,
 		&snippet.Language,
@@ -159,12 +178,21 @@ func GetSnippetByID(snippetID uuid.UUID) (models.Snippet, error) {
 	return snippet, nil
 }
 
-func DeleteSnippetByID(snippetId uuid.UUID) (models.Snippet, error) {
+func DeleteSnippetByID(snippetID uuid.UUID, userID uuid.UUID) (models.Snippet, error) {
+	var realUserID uuid.UUID
+	verifyQuery := "SELECT user_id FROM snippets WHERE snippet_id = $1"
+	err := DB.QueryRow(verifyQuery, snippetID).Scan(&realUserID)
+	if err != nil {
+		return models.Snippet{}, err
+	}
+	if realUserID != userID {
+		return models.Snippet{}, fmt.Errorf("access denied")
+	}
 	var snippet models.Snippet
 	selectQuery := `SELECT snippet_id, title, language, content, created_at, updated_at 
                     FROM snippets 
                     WHERE snippet_id = $1`
-	err := DB.QueryRow(selectQuery, snippetId).Scan(
+	err = DB.QueryRow(selectQuery, snippetID).Scan(
 		&snippet.SnippetId,
 		&snippet.Title,
 		&snippet.Language,
@@ -174,12 +202,12 @@ func DeleteSnippetByID(snippetId uuid.UUID) (models.Snippet, error) {
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return models.Snippet{}, fmt.Errorf("snippet with ID %s not found", snippetId)
+			return models.Snippet{}, fmt.Errorf("snippet with ID %s not found", snippetID)
 		}
 		return models.Snippet{}, err
 	}
 	deleteQuery := "DELETE FROM snippets where snippet_id = $1"
-	_, err = DB.Exec(deleteQuery, snippetId)
+	_, err = DB.Exec(deleteQuery, snippetID)
 	if err != nil {
 		return models.Snippet{}, err
 	}

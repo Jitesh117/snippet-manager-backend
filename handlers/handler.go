@@ -32,20 +32,15 @@ func HandleSnippet(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodGet:
-		getSnippetByID(w, snippetID)
+		getSnippetByID(w, r, snippetID)
 	case http.MethodPut:
 		updateSnippetByID(w, r, snippetID)
 	case http.MethodDelete:
-		deleteSnippetByID(w, snippetID)
+		deleteSnippetByID(w, r, snippetID)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
-
-// TODO: 1st try create a jwt token on register
-// then create a function to extract username from the token
-// then check if it works on login
-// if it does, add a middleware to all the reamining endpoints.
 
 func getAllSnippets(w http.ResponseWriter) {
 	snippets, err := database.GetAllSnippets()
@@ -95,12 +90,18 @@ func updateSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UU
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
+	userID, err := auth.ExtractUserIDFromToken(r)
+	if err != nil {
+		http.Error(w, "failed to get userID: "+err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	snippet, err := database.UpdateSnippet(
 		requestSnippet.Title,
 		requestSnippet.Language,
 		requestSnippet.Content,
 		snippetID,
+		userID,
 	)
 	if err != nil {
 		http.Error(w, "failed to update snippet", http.StatusInternalServerError)
@@ -113,10 +114,16 @@ func updateSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UU
 	json.NewEncoder(w).Encode(snippet)
 }
 
-func getSnippetByID(w http.ResponseWriter, snippetID uuid.UUID) {
-	snippet, err := database.GetSnippetByID(snippetID)
+func getSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID) {
+	userID, err := auth.ExtractUserIDFromToken(r)
 	if err != nil {
-		http.Error(w, "Failed to get snippet", http.StatusInternalServerError)
+		http.Error(w, "Failed to get userID"+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	snippet, err := database.GetSnippetByID(snippetID, userID)
+	if err != nil {
+		http.Error(w, "Failed to get snippet"+err.Error(), http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
@@ -125,8 +132,14 @@ func getSnippetByID(w http.ResponseWriter, snippetID uuid.UUID) {
 	json.NewEncoder(w).Encode(snippet)
 }
 
-func deleteSnippetByID(w http.ResponseWriter, snippetID uuid.UUID) {
-	snippet, err := database.DeleteSnippetByID(snippetID)
+func deleteSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID) {
+	userID, err := auth.ExtractUserIDFromToken(r)
+	if err != nil {
+		http.Error(w, "Failed to get userID: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	snippet, err := database.DeleteSnippetByID(snippetID, userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "snippet not found", http.StatusBadRequest)

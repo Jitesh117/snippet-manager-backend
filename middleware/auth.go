@@ -70,11 +70,11 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// Helper function to extract user ID from the request context
-func GetUserIDFromContext(r *http.Request) (uuid.UUID, error) {
-	userID, ok := r.Context().Value(UserContextKey).(uuid.UUID)
-	if !ok {
-		return uuid.UUID{}, fmt.Errorf("could not retrieve user ID from context")
-	}
-	return userID, nil
-}
+// // Helper function to extract user ID from the request context
+// func GetUserIDFromContext(r *http.Request) (uuid.UUID, error) {
+// 	userID, ok := r.Context().Value(UserContextKey).(uuid.UUID)
+// 	if !ok {
+// 		return uuid.UUID{}, fmt.Errorf("could not retrieve user ID from context")
+// 	}
+// 	return userID, nil
+// }
