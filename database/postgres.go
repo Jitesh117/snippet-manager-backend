@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/Jitesh117/snippet-manager/models"
@@ -117,5 +118,51 @@ func UpdateSnippet(
 		return models.Snippet{}, err
 	}
 
+	return snippet, nil
+}
+
+func GetSnippetByID(snippetID uuid.UUID) (models.Snippet, error) {
+	var snippet models.Snippet
+	query := "SELECT snippet_id, title, language, content, created_at, updated_at FROM snippets WHERE snippet_id = $1"
+
+	err := DB.QueryRow(query, snippetID).Scan(
+		&snippet.SnippetId,
+		&snippet.Title,
+		&snippet.Language,
+		&snippet.Content,
+		&snippet.CreatedAt,
+		&snippet.UpdatedAt,
+	)
+	if err != nil {
+		return models.Snippet{}, err
+	}
+
+	return snippet, nil
+}
+
+func DeleteSnippetByID(snippetId uuid.UUID) (models.Snippet, error) {
+	var snippet models.Snippet
+	selectQuery := `SELECT snippet_id, title, language, content, created_at, updated_at 
+                    FROM snippets 
+                    WHERE snippet_id = $1`
+	err := DB.QueryRow(selectQuery, snippetId).Scan(
+		&snippet.SnippetId,
+		&snippet.Title,
+		&snippet.Language,
+		&snippet.Content,
+		&snippet.CreatedAt,
+		&snippet.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return models.Snippet{}, fmt.Errorf("snippet with ID %s not found", snippetId)
+		}
+		return models.Snippet{}, err
+	}
+	deleteQuery := "DELETE FROM snippets where snippet_id = $1"
+	_, err = DB.Exec(deleteQuery, snippetId)
+	if err != nil {
+		return models.Snippet{}, err
+	}
 	return snippet, nil
 }

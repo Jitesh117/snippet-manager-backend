@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 func HandleSnippets(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		getAllSnippets(w, r)
+		getAllSnippets(w)
 	case http.MethodPost:
 		createSnippets(w, r)
 	default:
@@ -30,15 +31,17 @@ func HandleSnippet(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodGet:
-		getSnippetByID(w, r, snippetID)
+		getSnippetByID(w, snippetID)
 	case http.MethodPut:
 		updateSnippetByID(w, r, snippetID)
+	case http.MethodDelete:
+		deleteSnippetByID(w, snippetID)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func getAllSnippets(w http.ResponseWriter, r *http.Request) {
+func getAllSnippets(w http.ResponseWriter) {
 	snippets, err := database.GetAllSnippets()
 	if err != nil {
 		http.Error(w, "Failed to get snippets", http.StatusInternalServerError)
@@ -95,13 +98,26 @@ func updateSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UU
 	json.NewEncoder(w).Encode(snippet)
 }
 
-func getSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID) {
+func getSnippetByID(w http.ResponseWriter, snippetID uuid.UUID) {
 	snippet, err := database.GetSnippetByID(snippetID)
 	if err != nil {
 		http.Error(w, "Failed to get snippet", http.StatusInternalServerError)
 		log.Println(err)
+		return
 	}
 	log.Println("Snippet fetched from ID")
 	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(snippet)
+}
+
+func deleteSnippetByID(w http.ResponseWriter, snippetID uuid.UUID) {
+	snippet, err := database.DeleteSnippetByID(snippetID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "snippet not found", http.StatusBadRequest)
+		}
+		http.Error(w, "Failed to delete snippet", http.StatusInternalServerError)
+	}
+	log.Println("snippet deleted from DB")
 	json.NewEncoder(w).Encode(snippet)
 }
