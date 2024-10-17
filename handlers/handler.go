@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Jitesh117/snippet-manager/database"
+	auth "github.com/Jitesh117/snippet-manager/middleware"
 	"github.com/Jitesh117/snippet-manager/models"
 	"github.com/google/uuid"
 )
@@ -41,6 +42,11 @@ func HandleSnippet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO: 1st try create a jwt token on register
+// then create a function to extract username from the token
+// then check if it works on login
+// if it does, add a middleware to all the reamining endpoints.
+
 func getAllSnippets(w http.ResponseWriter) {
 	snippets, err := database.GetAllSnippets()
 	if err != nil {
@@ -54,15 +60,24 @@ func getAllSnippets(w http.ResponseWriter) {
 
 func createSnippets(w http.ResponseWriter, r *http.Request) {
 	var requestSnippet models.Snippet
+	var userID uuid.UUID
 
 	if err := json.NewDecoder(r.Body).Decode(&requestSnippet); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
+
+	userID, err := auth.ExtractUserIDFromToken(r)
+	if err != nil {
+		http.Error(w, "failed to extract ID from token: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	snippet, err := database.CreateSnippet(
 		requestSnippet.Title,
 		requestSnippet.Language,
 		requestSnippet.Content,
+		userID,
 	)
 	if err != nil {
 		http.Error(w, "failed to create snippet", http.StatusInternalServerError)
@@ -77,7 +92,7 @@ func createSnippets(w http.ResponseWriter, r *http.Request) {
 func updateSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID) {
 	var requestSnippet models.Snippet
 	if err := json.NewDecoder(r.Body).Decode(&requestSnippet); err != nil {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
@@ -120,4 +135,55 @@ func deleteSnippetByID(w http.ResponseWriter, snippetID uuid.UUID) {
 	}
 	log.Println("snippet deleted from DB")
 	json.NewEncoder(w).Encode(snippet)
+}
+
+func Register(w http.ResponseWriter, r *http.Request) {
+	var user models.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := database.CreateUser(user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	token, err := auth.GenerateJWT(userID)
+	if err != nil {
+		http.Error(w, "Failed to create jwt token", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("userID: ", userID)
+	log.Println("user signed in!")
+	json.NewEncoder(w).Encode(token)
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	var loginData struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&loginData)
+	if err != nil {
+		http.Error(w, "invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := database.CheckUserCredentials(loginData.Email, loginData.Password)
+	if err != nil {
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	token, err := auth.GenerateJWT(userID)
+	if err != nil {
+		http.Error(w, "Failed to generated JWT", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("user logged in!")
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
