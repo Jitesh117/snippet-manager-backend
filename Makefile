@@ -18,7 +18,12 @@ run: build
 
 db-start:
 	@echo "Starting PostgreSQL container..."
-	@docker run --name $(DOCKER_POSTGRES_NAME) -e POSTGRES_PASSWORD=$(DB_PASSWORD) -p $(DB_PORT):5432 -d postgres
+	@docker start $(DOCKER_POSTGRES_NAME) 2>/dev/null || \
+		docker run --name $(DOCKER_POSTGRES_NAME) \
+		-e POSTGRES_PASSWORD=$(DB_PASSWORD) \
+		-p $(DB_PORT):5432 \
+		-v $(DB_VOLUME):/var/lib/postgresql/data \
+		-d postgres
 
 db-create:
 	@echo "Creating database..."
