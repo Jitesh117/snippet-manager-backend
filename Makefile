@@ -6,6 +6,7 @@ DB_PASSWORD=mysecretpassword
 DB_PORT=5432
 GOBASE=$(shell pwd)
 GOBIN=$(GOBASE)/bin
+DB_VOLUME=$(GOBASE)/pgdata
 
 build:
 	@echo "Building..."
