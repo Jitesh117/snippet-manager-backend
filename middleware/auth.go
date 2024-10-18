@@ -57,7 +57,7 @@ func GenerateJWT(userID uuid.UUID) (string, error) {
 	return tokenString, nil
 }
 
-func JWTAuthMiddleware(next http.Handler) http.Handler {
+func JWTAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID, err := ExtractUserIDFromToken(r)
 		if err != nil {

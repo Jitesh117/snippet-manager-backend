@@ -181,7 +181,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 	err := json.NewDecoder(r.Body).Decode(&loginData)
 	if err != nil {
-		http.Error(w, "invalid request payload", http.StatusBadRequest)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
@@ -193,7 +193,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := auth.GenerateJWT(userID)
 	if err != nil {
-		http.Error(w, "Failed to generated JWT", http.StatusInternalServerError)
+		http.Error(w, "Failed to generated JWT: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

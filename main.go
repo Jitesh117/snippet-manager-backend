@@ -6,14 +6,18 @@ import (
 
 	"github.com/Jitesh117/snippet-manager-backend/database"
 	"github.com/Jitesh117/snippet-manager-backend/handlers"
+	auth "github.com/Jitesh117/snippet-manager-backend/middleware"
 )
 
 func main() {
 	database.InitDB()
 	defer database.CloseDB()
 
-	http.HandleFunc("/snippets", handlers.HandleSnippets)
-	http.HandleFunc("/snippets/", handlers.HandleSnippet)
+	// protected endpoints
+	http.HandleFunc("/snippets", auth.JWTAuthMiddleware(handlers.HandleSnippets))
+	http.HandleFunc("/snippets/", auth.JWTAuthMiddleware(handlers.HandleSnippet))
+
+	// open endpoints
 	http.HandleFunc("/register", handlers.Register)
 	http.HandleFunc("/login", handlers.Login)
 
