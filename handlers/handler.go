@@ -151,6 +151,10 @@ func deleteSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UU
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -175,6 +179,10 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	var loginData struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -190,6 +198,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
+	log.Println(userID)
 
 	token, err := auth.GenerateJWT(userID)
 	if err != nil {
@@ -199,4 +208,36 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("user logged in!")
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
+}
+
+func DeleteUserByID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var userData struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&userData)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := database.CheckUserCredentials(userData.Email, userData.Password)
+	if err != nil {
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
+	deletedUserID, err := database.DeleteUser(userID)
+	if err != nil {
+		http.Error(w, "Failed to Delete user", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("user deleted!")
+	json.NewEncoder(w).Encode(map[string]string{"userID": deletedUserID.String()})
 }
