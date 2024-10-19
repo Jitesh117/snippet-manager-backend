@@ -261,3 +261,22 @@ func CheckUserCredentials(email, password string) (uuid.UUID, error) {
 	}
 	return userID, nil
 }
+
+func DeleteUser(userID uuid.UUID) (uuid.UUID, error) {
+	query := `
+  DELETE FROM users
+  where user_id = $1
+  RETURNING user_id;
+  `
+
+	var deletedUserID uuid.UUID
+
+	err := DB.QueryRow(query, userID).Scan(&deletedUserID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return uuid.Nil, fmt.Errorf("user with ID %s not found", userID)
+		}
+		return uuid.Nil, err
+	}
+	return deletedUserID, nil
+}

@@ -13,13 +13,20 @@ func main() {
 	database.InitDB()
 	defer database.CloseDB()
 
-	// protected endpoints
-	http.HandleFunc("/snippets", auth.JWTAuthMiddleware(handlers.HandleSnippets))
-	http.HandleFunc("/snippets/", auth.JWTAuthMiddleware(handlers.HandleSnippet))
+	// Protected endpoints with rate limiter and JWT middleware
+	http.Handle(
+		"/snippets",
+		auth.RateLimiter(auth.JWTAuthMiddleware(http.HandlerFunc(handlers.HandleSnippets))),
+	)
+	http.Handle(
+		"/snippets/",
+		auth.RateLimiter(auth.JWTAuthMiddleware(http.HandlerFunc(handlers.HandleSnippet))),
+	)
 
-	// open endpoints
-	http.HandleFunc("/register", handlers.Register)
-	http.HandleFunc("/login", handlers.Login)
+	// Open endpoints with just rate limiter
+	http.HandleFunc("/register", auth.RateLimiter(handlers.Register))
+	http.HandleFunc("/login", auth.RateLimiter(handlers.Login))
+	http.HandleFunc("/deleteUser", auth.RateLimiter(handlers.DeleteUserByID))
 
 	log.Println("Server is running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
