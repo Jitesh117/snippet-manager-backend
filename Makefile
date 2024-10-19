@@ -6,7 +6,6 @@ DB_PASSWORD=mysecretpassword
 DB_PORT=5432
 GOBASE=$(shell pwd)
 GOBIN=$(GOBASE)/bin
-DB_VOLUME=$(GOBASE)/pgdata
 
 build:
 	@echo "Building..."
@@ -16,14 +15,12 @@ run: build
 	@echo "Running..."
 	@./$(BINARY_NAME)
 
-
 db-start:
 	@echo "Starting PostgreSQL container..."
 	@docker start $(DOCKER_POSTGRES_NAME) 2>/dev/null || \
 		docker run --name $(DOCKER_POSTGRES_NAME) \
 		-e POSTGRES_PASSWORD=$(DB_PASSWORD) \
 		-p $(DB_PORT):5432 \
-		-v $(DB_VOLUME):/var/lib/postgresql/data \
 		-d postgres
 
 db-create:
@@ -55,4 +52,3 @@ help:
 	@echo "  make db-create  - Create database"
 	@echo "  make db-drop    - Drop database"
 	@echo "  make db-restart - Restart PostgreSQL container"
-
