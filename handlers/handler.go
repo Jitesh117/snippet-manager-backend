@@ -10,6 +10,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/Jitesh117/snippet-manager-backend/constants"
 	"github.com/Jitesh117/snippet-manager-backend/database"
 	auth "github.com/Jitesh117/snippet-manager-backend/middleware"
 	"github.com/Jitesh117/snippet-manager-backend/models"
@@ -23,7 +24,7 @@ func HandleSnippets(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		createSnippet(w, r)
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 	}
 }
 
@@ -31,7 +32,7 @@ func HandleSnippet(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Path[len("/snippets/"):]
 	snippetID, err := uuid.Parse(idStr)
 	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		http.Error(w, constants.ErrInvalidSnippetID, http.StatusBadRequest)
 		return
 	}
 	switch r.Method {
@@ -42,14 +43,14 @@ func HandleSnippet(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		deleteSnippetByID(w, r, snippetID)
 	default:
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 	}
 }
 
 func getAllSnippets(w http.ResponseWriter) {
 	snippets, err := database.GetAllSnippets()
 	if err != nil {
-		http.Error(w, "Failed to get snippets", http.StatusInternalServerError)
+		http.Error(w, constants.ErrFailedToGetSnippets, http.StatusInternalServerError)
 		return
 	}
 	log.Println("Got all Snippets")
@@ -62,17 +63,17 @@ func createSnippet(w http.ResponseWriter, r *http.Request) {
 	var userID uuid.UUID
 
 	if err := json.NewDecoder(r.Body).Decode(&requestSnippet); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, constants.ErrInvalidPayload, http.StatusBadRequest)
 		return
 	}
 	if err := validateSnippet(requestSnippet); err != nil {
-		http.Error(w, "Invalid request payload: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, constants.ErrInvalidPayload+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	userID, err := auth.ExtractUserIDFromToken(r)
 	if err != nil {
-		http.Error(w, "failed to extract ID from token: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, constants.ErrFailedToExtractTokenID+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -83,7 +84,7 @@ func createSnippet(w http.ResponseWriter, r *http.Request) {
 		userID,
 	)
 	if err != nil {
-		http.Error(w, "failed to create snippet", http.StatusInternalServerError)
+		http.Error(w, constants.ErrFailedToCreateSnippet, http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
@@ -94,13 +95,13 @@ func createSnippet(w http.ResponseWriter, r *http.Request) {
 
 func validateSnippet(snippet models.Snippet) error {
 	if snippet.Title == "" {
-		return fmt.Errorf("title can't be empty!")
+		return fmt.Errorf(constants.ErrEmptyTitle)
 	}
 	if snippet.Language == "" {
-		return fmt.Errorf("language can't be empty!")
+		return fmt.Errorf(constants.ErrEmptyLanguage)
 	}
 	if snippet.Content == "" {
-		return fmt.Errorf("content can't be empty!")
+		return fmt.Errorf(constants.ErrEmptyContent)
 	}
 	return nil
 }
@@ -108,16 +109,16 @@ func validateSnippet(snippet models.Snippet) error {
 func updateSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID) {
 	var requestSnippet models.Snippet
 	if err := json.NewDecoder(r.Body).Decode(&requestSnippet); err != nil {
-		http.Error(w, "Invalid request payload: ", http.StatusBadRequest)
+		http.Error(w, constants.ErrInvalidPayload, http.StatusBadRequest)
 		return
 	}
 	if err := validateSnippet(requestSnippet); err != nil {
-		http.Error(w, "Invalid request payload: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, constants.ErrInvalidPayload+err.Error(), http.StatusBadRequest)
 		return
 	}
 	userID, err := auth.ExtractUserIDFromToken(r)
 	if err != nil {
-		http.Error(w, "failed to get userID: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, constants.ErrFailedToGetUserID+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -129,7 +130,7 @@ func updateSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UU
 		userID,
 	)
 	if err != nil {
-		http.Error(w, "failed to update snippet", http.StatusInternalServerError)
+		http.Error(w, constants.ErrFailedToUpdateSnippet, http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
@@ -142,13 +143,13 @@ func updateSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UU
 func getSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID) {
 	userID, err := auth.ExtractUserIDFromToken(r)
 	if err != nil {
-		http.Error(w, "Failed to get userID"+err.Error(), http.StatusBadRequest)
+		http.Error(w, constants.ErrFailedToGetUserID+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	snippet, err := database.GetSnippetByID(snippetID, userID)
 	if err != nil {
-		http.Error(w, "Failed to get snippet"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, constants.ErrFailedToGetSnippets+err.Error(), http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
@@ -160,16 +161,16 @@ func getSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID)
 func deleteSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID) {
 	userID, err := auth.ExtractUserIDFromToken(r)
 	if err != nil {
-		http.Error(w, "Failed to get userID: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, constants.ErrFailedToGetUserID+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	snippet, err := database.DeleteSnippetByID(snippetID, userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			http.Error(w, "snippet not found", http.StatusBadRequest)
+			http.Error(w, constants.ErrSnippetNotFound, http.StatusBadRequest)
 		}
-		http.Error(w, "Failed to delete snippet", http.StatusInternalServerError)
+		http.Error(w, constants.ErrFailedToDeleteSnippet, http.StatusInternalServerError)
 	}
 	log.Println("snippet deleted from DB")
 	json.NewEncoder(w).Encode(snippet)
@@ -182,7 +183,10 @@ func validateEmail(email string) bool {
 
 func validatePassword(password string) error {
 	if len(password) < 8 {
-		return fmt.Errorf("password must be at least 8 characters long")
+		return fmt.Errorf(constants.ErrPasswordTooShort)
+	}
+	if len(password) > 20 {
+		return fmt.Errorf(constants.ErrPasswordTooLong)
 	}
 
 	var (
@@ -228,21 +232,25 @@ func validatePassword(password string) error {
 
 func validateUser(user models.User) error {
 	if user.UserName == "" {
-		return fmt.Errorf("username can't be empty")
+		return fmt.Errorf(constants.ErrEmptyUsername)
 	}
 	if len(user.UserName) < 3 {
-		return fmt.Errorf("username must be at least 3 characters long")
+		return fmt.Errorf(constants.ErrUsernameTooShort)
+	}
+
+	if len(user.UserName) > 30 {
+		return fmt.Errorf(constants.ErrUsernameTooLong)
 	}
 
 	if user.Email == "" {
-		return fmt.Errorf("email can't be empty")
+		return fmt.Errorf(constants.ErrEmptyContent)
 	}
 	if !validateEmail(user.Email) {
-		return fmt.Errorf("invalid email format")
+		return fmt.Errorf(constants.ErrInvalidEmailFormat)
 	}
 
 	if user.Password == "" {
-		return fmt.Errorf("password can't be empty")
+		return fmt.Errorf(constants.ErrEmptyPassword)
 	}
 	if err := validatePassword(user.Password); err != nil {
 		return err
@@ -253,17 +261,17 @@ func validateUser(user models.User) error {
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 		return
 	}
 	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, constants.ErrInvalidPayload, http.StatusBadRequest)
 		return
 	}
 	if err := validateUser(user); err != nil {
-		http.Error(w, "Invalid request payload: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, constants.ErrInvalidPayload+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -274,7 +282,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 	token, err := auth.GenerateJWT(userID)
 	if err != nil {
-		http.Error(w, "Failed to create jwt token", http.StatusInternalServerError)
+		http.Error(w, constants.ErrFailedToGenerateToken, http.StatusInternalServerError)
 		return
 	}
 
@@ -285,7 +293,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 		return
 	}
 	var loginData struct {
@@ -294,20 +302,24 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 	err := json.NewDecoder(r.Body).Decode(&loginData)
 	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, constants.ErrInvalidPayload, http.StatusBadRequest)
 		return
 	}
 
 	userID, err := database.CheckUserCredentials(loginData.Email, loginData.Password)
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(w, constants.ErrInvalidCredentials, http.StatusUnauthorized)
 		return
 	}
 	log.Println(userID)
 
 	token, err := auth.GenerateJWT(userID)
 	if err != nil {
-		http.Error(w, "Failed to generated JWT: "+err.Error(), http.StatusInternalServerError)
+		http.Error(
+			w,
+			constants.ErrFailedToGenerateToken+err.Error(),
+			http.StatusInternalServerError,
+		)
 		return
 	}
 
@@ -317,7 +329,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 func DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -328,18 +340,18 @@ func DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&userData)
 	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, constants.ErrInvalidPayload, http.StatusBadRequest)
 		return
 	}
 
 	userID, err := database.CheckUserCredentials(userData.Email, userData.Password)
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(w, constants.ErrInvalidCredentials, http.StatusUnauthorized)
 		return
 	}
 	deletedUserID, err := database.DeleteUser(userID)
 	if err != nil {
-		http.Error(w, "Failed to Delete user", http.StatusInternalServerError)
+		http.Error(w, constants.ErrFailedToDeleteUser, http.StatusInternalServerError)
 		return
 	}
 
