@@ -3,8 +3,12 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
+	"unicode"
 
 	"github.com/Jitesh117/snippet-manager-backend/database"
 	auth "github.com/Jitesh117/snippet-manager-backend/middleware"
@@ -17,7 +21,7 @@ func HandleSnippets(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		getAllSnippets(w)
 	case http.MethodPost:
-		createSnippets(w, r)
+		createSnippet(w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -53,12 +57,16 @@ func getAllSnippets(w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(snippets)
 }
 
-func createSnippets(w http.ResponseWriter, r *http.Request) {
+func createSnippet(w http.ResponseWriter, r *http.Request) {
 	var requestSnippet models.Snippet
 	var userID uuid.UUID
 
 	if err := json.NewDecoder(r.Body).Decode(&requestSnippet); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	if err := validateSnippet(requestSnippet); err != nil {
+		http.Error(w, "Invalid request payload: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -84,10 +92,27 @@ func createSnippets(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(snippet)
 }
 
+func validateSnippet(snippet models.Snippet) error {
+	if snippet.Title == "" {
+		return fmt.Errorf("title can't be empty!")
+	}
+	if snippet.Language == "" {
+		return fmt.Errorf("language can't be empty!")
+	}
+	if snippet.Content == "" {
+		return fmt.Errorf("content can't be empty!")
+	}
+	return nil
+}
+
 func updateSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UUID) {
 	var requestSnippet models.Snippet
 	if err := json.NewDecoder(r.Body).Decode(&requestSnippet); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		http.Error(w, "Invalid request payload: ", http.StatusBadRequest)
+		return
+	}
+	if err := validateSnippet(requestSnippet); err != nil {
+		http.Error(w, "Invalid request payload: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	userID, err := auth.ExtractUserIDFromToken(r)
@@ -150,6 +175,82 @@ func deleteSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UU
 	json.NewEncoder(w).Encode(snippet)
 }
 
+func validateEmail(email string) bool {
+	emailPattern := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
+	return regexp.MustCompile(emailPattern).MatchString(email)
+}
+
+func validatePassword(password string) error {
+	if len(password) < 8 {
+		return fmt.Errorf("password must be at least 8 characters long")
+	}
+
+	var (
+		hasUpper   bool
+		hasLower   bool
+		hasNumber  bool
+		hasSpecial bool
+	)
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsLower(char):
+			hasLower = true
+		case unicode.IsNumber(char):
+			hasNumber = true
+		case strings.ContainsRune(`!@#$%^&*(),.?":{}|<>`, char):
+			hasSpecial = true
+		}
+	}
+
+	var missing []string
+	if !hasUpper {
+		missing = append(missing, "uppercase letter")
+	}
+	if !hasLower {
+		missing = append(missing, "lowercase letter")
+	}
+	if !hasNumber {
+		missing = append(missing, "number")
+	}
+	if !hasSpecial {
+		missing = append(missing, "special character")
+	}
+
+	if len(missing) > 0 {
+		return fmt.Errorf("password must contain at least one %s", strings.Join(missing, ", "))
+	}
+
+	return nil
+}
+
+func validateUser(user models.User) error {
+	if user.UserName == "" {
+		return fmt.Errorf("username can't be empty")
+	}
+	if len(user.UserName) < 3 {
+		return fmt.Errorf("username must be at least 3 characters long")
+	}
+
+	if user.Email == "" {
+		return fmt.Errorf("email can't be empty")
+	}
+	if !validateEmail(user.Email) {
+		return fmt.Errorf("invalid email format")
+	}
+
+	if user.Password == "" {
+		return fmt.Errorf("password can't be empty")
+	}
+	if err := validatePassword(user.Password); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -159,6 +260,10 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	if err := validateUser(user); err != nil {
+		http.Error(w, "Invalid request payload: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
