@@ -41,6 +41,8 @@ db-remove: db-stop
 
 db-restart: db-stop db-start
 
+serve: db-start run
+
 help:
 	@echo "Available commands:"
 	@echo "  make build      - Build the project"
