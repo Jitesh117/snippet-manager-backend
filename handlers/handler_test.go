@@ -12,7 +12,7 @@ import (
 	"github.com/Jitesh117/snippet-manager-backend/models"
 )
 
-var jwtTokenString = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mjk0Mzc1NjgsInVzZXJfaWQiOiI3Y2MzOWUxYy0xYzc1LTRjYWUtOTI3Mi0wNDY3NmMxMmY1YzUifQ.ZU55nWTWBYPZXme3H7WiNJm2zTuYkYt4v0WKkNGcyE4"
+var jwtTokenString = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mjk2NzE3NTEsInVzZXJfaWQiOiJmOTI3ZTgzNy1kNTVmLTQ1YjAtODM4Ni1mZjQ3NjQ0OGZjNTcifQ.wgKQAKM5u09MN1izKPKUGFrzM1LHzi_MJETnNTRREw4"
 
 func TestMain(m *testing.M) {
 	database.InitDB()
@@ -22,8 +22,8 @@ func TestMain(m *testing.M) {
 
 func TestRegister(t *testing.T) {
 	user := models.User{
-		UserName: "tester",
-		Email:    "testing@test.com",
+		UserName: "testerTest",
+		Email:    "testingTest@test.com",
 		Password: "password_test",
 	}
 	body, _ := json.Marshal(user)
@@ -32,7 +32,7 @@ func TestRegister(t *testing.T) {
 		t.Fatal(err)
 	}
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(handlers.Register)
+	handler := http.HandlerFunc(handlers.RegisterUser)
 
 	handler.ServeHTTP(rr, req)
 
@@ -43,8 +43,8 @@ func TestRegister(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	loginData := map[string]string{
-		"user_name": "tester",
-		"email":     "testing@test.com",
+		"user_name": "testerTest",
+		"email":     "testingTests@test.com",
 		"password":  "password_test",
 	}
 	body, _ := json.Marshal(loginData)
@@ -54,7 +54,7 @@ func TestLogin(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(handlers.Login)
+	handler := http.HandlerFunc(handlers.LoginUser)
 
 	handler.ServeHTTP(rr, req)
 
@@ -106,7 +106,7 @@ func TestCreateSnippet(t *testing.T) {
 }
 
 func TestGetSnippetByID(t *testing.T) {
-	snippetID := "3e2272fa-e415-4d37-86c2-228f2353c152"
+	snippetID := "2d8b9384-a551-4a09-96d4-f9c1678a778c"
 	req, err := http.NewRequest(http.MethodGet, "/snippets/"+snippetID, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -124,7 +124,7 @@ func TestGetSnippetByID(t *testing.T) {
 }
 
 func TestUpdateSnippetByID(t *testing.T) {
-	snippetID := "3e2272fa-e415-4d37-86c2-228f2353c152"
+	snippetID := "2d8b9384-a551-4a09-96d4-f9c1678a778c"
 	snippet := models.Snippet{
 		Title:    "Updated Snippet",
 		Language: "Go",

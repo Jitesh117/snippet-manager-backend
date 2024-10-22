@@ -24,8 +24,8 @@ func main() {
 	)
 
 	// Open endpoints with just rate limiter
-	http.HandleFunc("/register", auth.RateLimiter(handlers.Register))
-	http.HandleFunc("/login", auth.RateLimiter(handlers.Login))
+	http.HandleFunc("/register", auth.RateLimiter(handlers.RegisterUser))
+	http.HandleFunc("/login", auth.RateLimiter(handlers.LoginUser))
 	http.HandleFunc("/deleteUser", auth.RateLimiter(handlers.DeleteUserByID))
 
 	log.Println("Server is running on :8080")
