@@ -1,6 +1,12 @@
 package middleware
 
-import "net/http"
+import (
+	"net/http"
+
+	"golang.org/x/time/rate"
+)
+
+var rateLimiter = rate.NewLimiter(1, 5)
 
 func RateLimiter(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

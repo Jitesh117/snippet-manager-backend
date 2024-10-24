@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"golang.org/x/time/rate"
 )
 
 var JWTKey = []byte("your_secret_key")
@@ -70,5 +69,3 @@ func JWTAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-
-var rateLimiter = rate.NewLimiter(1, 5)
