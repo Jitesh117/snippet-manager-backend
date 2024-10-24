@@ -111,3 +111,49 @@ func DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 	log.Println("user deleted!")
 	json.NewEncoder(w).Encode(map[string]string{"userID": deletedUserID.String()})
 }
+
+func ChangePassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
+		return
+	}
+
+	var userData struct {
+		Email       string `json:"email"`
+		Password    string `json:"password"`
+		NewPassword string `json:"new_password"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&userData)
+	if err != nil {
+		http.Error(w, constants.ErrInvalidPayload, http.StatusBadRequest)
+		return
+	}
+
+	if userData.Password == userData.NewPassword {
+		http.Error(w, "New password must be different from the old password", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := database.CheckUserCredentials(userData.Email, userData.Password)
+	if err != nil {
+		http.Error(w, constants.ErrInvalidCredentials, http.StatusUnauthorized)
+		return
+	}
+	err = helper.ValidatePassword(userData.NewPassword)
+	if err != nil {
+		http.Error(w, constants.ErrInvalidPayload+": "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = database.ChangePassword(userID, userData.NewPassword)
+	if err != nil {
+		http.Error(
+			w,
+			constants.ErrFailedToUpdatePassword+": "+err.Error(),
+			http.StatusInternalServerError,
+		)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Password updated successfully"))
+}

@@ -37,6 +37,7 @@ func main() {
 	http.HandleFunc("/register", auth.RateLimiter(handlers.RegisterUser))
 	http.HandleFunc("/login", auth.RateLimiter(handlers.LoginUser))
 	http.HandleFunc("/deleteUser", auth.RateLimiter(handlers.DeleteUserByID))
+	http.HandleFunc("/changePassword", auth.RateLimiter(handlers.ChangePassword))
 
 	log.Println("Server is running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))

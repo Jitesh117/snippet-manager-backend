@@ -76,3 +76,22 @@ func DeleteUser(userID uuid.UUID) (uuid.UUID, error) {
 	}
 	return deletedUserID, nil
 }
+
+func ChangePassword(userID uuid.UUID, password string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %v", err)
+	}
+	query := `UPDATE users
+  SET password_hash = $1
+  WHERE user_id = $2
+  RETURNING user_id
+  `
+	var updatedUserId uuid.UUID
+
+	err = DB.QueryRow(query, hashedPassword, userID).Scan(&updatedUserId)
+	if err != nil {
+		return err
+	}
+	return nil
+}

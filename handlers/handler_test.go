@@ -22,9 +22,9 @@ func TestMain(m *testing.M) {
 
 func TestRegister(t *testing.T) {
 	user := models.User{
-		UserName: "testerTest",
-		Email:    "testingTest@test.com",
-		Password: "password_test",
+		UserName: "testerTestNew",
+		Email:    "testingTest@testNew.com",
+		Password: "Password@123",
 	}
 	body, _ := json.Marshal(user)
 	req, err := http.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
@@ -42,10 +42,10 @@ func TestRegister(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
-	loginData := map[string]string{
-		"user_name": "testerTest",
-		"email":     "testingTests@test.com",
-		"password":  "password_test",
+	loginData := models.User{
+		UserName: "testerTestNew",
+		Email:    "testingTest@testNew.com",
+		Password: "Password@123",
 	}
 	body, _ := json.Marshal(loginData)
 	req, err := http.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(body))
@@ -55,6 +55,30 @@ func TestLogin(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(handlers.LoginUser)
+
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+}
+
+func TestChangePassword(t *testing.T) {
+	changeData := map[string]string{
+		"email":        "testingTest@testNew.com",
+		"password":     "Password@123",
+		"new_password": "NewPassword@123",
+	}
+
+	body, _ := json.Marshal(changeData)
+
+	req, err := http.NewRequest(http.MethodPut, "/changePassword", bytes.NewBuffer(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(handlers.ChangePassword)
 
 	handler.ServeHTTP(rr, req)
 
@@ -154,8 +178,8 @@ func TestUpdateSnippetByID(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 	userData := map[string]string{
-		"email":    "testing@test.com",
-		"password": "password_test",
+		"email":    "testingTest@testNew.com",
+		"password": "NewPassword@123",
 	}
 	body, _ := json.Marshal(userData)
 

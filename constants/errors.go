@@ -22,6 +22,7 @@ const (
 	ErrFailedToGenerateToken  = "Failed to generate JWT token"
 	ErrFailedToDeleteUser     = "Failed to delete user"
 	ErrFailedToExtractTokenID = "Failed to extract ID from token"
+	ErrFailedToUpdatePassword = "Failed to updated password"
 
 	// Validation messages
 	ErrEmptyTitle         = "Title can't be empty!"

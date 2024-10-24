@@ -28,7 +28,7 @@ func validateEmail(email string) bool {
 	return regexp.MustCompile(emailPattern).MatchString(email)
 }
 
-func validatePassword(password string) error {
+func ValidatePassword(password string) error {
 	if len(password) < 8 {
 		return fmt.Errorf(constants.ErrPasswordTooShort)
 	}
@@ -99,7 +99,7 @@ func ValidateUser(user models.User) error {
 	if user.Password == "" {
 		return fmt.Errorf(constants.ErrEmptyPassword)
 	}
-	if err := validatePassword(user.Password); err != nil {
+	if err := ValidatePassword(user.Password); err != nil {
 		return err
 	}
 
