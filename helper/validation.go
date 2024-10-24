@@ -105,3 +105,16 @@ func ValidateUser(user models.User) error {
 
 	return nil
 }
+
+func IsValidSortField(field string) bool {
+	validFields := map[string]bool{
+		"created_at": true,
+		"updated_at": true,
+		"title":      true,
+	}
+	return validFields[field]
+}
+
+func IsValidOrder(order string) bool {
+	return order == "asc" || order == "desc"
+}

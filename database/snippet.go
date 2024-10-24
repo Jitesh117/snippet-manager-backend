@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/Jitesh117/snippet-manager-backend/constants"
+	"github.com/Jitesh117/snippet-manager-backend/helper"
 	"github.com/Jitesh117/snippet-manager-backend/models"
 	"github.com/google/uuid"
 )
@@ -154,4 +156,88 @@ func DeleteSnippetByID(snippetID uuid.UUID, userID uuid.UUID) (models.Snippet, e
 		return models.Snippet{}, err
 	}
 	return snippet, nil
+}
+
+func GetSnippetsByLanguage(language string, userID uuid.UUID) ([]models.Snippet, error) {
+	var snippets []models.Snippet
+	query := `
+    SELECT snippet_id, title, content, language, created_at, updated_at 
+    FROM snippets 
+    WHERE language = $1 AND user_id = $2
+    ORDER BY updated_at DESC
+    `
+	rows, err := DB.Query(query, language, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var snippet models.Snippet
+		err := rows.Scan(
+			&snippet.SnippetId,
+			&snippet.Title,
+			&snippet.Content,
+			&snippet.Language,
+			&snippet.CreatedAt,
+			&snippet.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		snippets = append(snippets, snippet)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return snippets, nil
+}
+
+func GetSnippetsSorted(userID uuid.UUID, sortBy, order string) ([]models.Snippet, error) {
+	if !helper.IsValidSortField(sortBy) || !helper.IsValidOrder(order) {
+		return nil, fmt.Errorf("invalid sort options")
+	}
+
+	query := `
+		SELECT snippet_id, title, content, language, created_at, updated_at 
+		FROM snippets 
+		WHERE user_id = $1
+		ORDER BY %s %s
+	`
+
+	query = fmt.Sprintf(query, sortBy, order)
+
+	rows, err := DB.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var snippets []models.Snippet
+	for rows.Next() {
+		var snippet models.Snippet
+		err := rows.Scan(
+			&snippet.SnippetId,
+			&snippet.Title,
+			&snippet.Content,
+			&snippet.Language,
+			&snippet.CreatedAt,
+			&snippet.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		snippets = append(snippets, snippet)
+	}
+	if len(snippets) == 0 {
+		return nil, fmt.Errorf(constants.ErrSnippetNotFound)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return snippets, nil
 }

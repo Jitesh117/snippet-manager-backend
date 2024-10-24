@@ -14,13 +14,23 @@ func main() {
 	defer database.CloseDB()
 
 	// Protected endpoints with rate limiter and JWT middleware
-	http.Handle(
+	http.HandleFunc(
 		"/snippets",
 		auth.RateLimiter(auth.JWTAuthMiddleware(http.HandlerFunc(handlers.HandleSnippets))),
 	)
-	http.Handle(
+	http.HandleFunc(
 		"/snippets/",
 		auth.RateLimiter(auth.JWTAuthMiddleware(http.HandlerFunc(handlers.HandleSnippet))),
+	)
+
+	http.HandleFunc(
+		"/snippets/language",
+		auth.RateLimiter(auth.JWTAuthMiddleware(http.HandlerFunc(handlers.GetSnippetByLanguage))),
+	)
+
+	http.HandleFunc(
+		"/snippets/sorted",
+		auth.RateLimiter(auth.JWTAuthMiddleware(http.HandlerFunc(handlers.GetSortedSnippets))),
 	)
 
 	// Open endpoints with just rate limiter
