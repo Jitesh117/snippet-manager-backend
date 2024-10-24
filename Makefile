@@ -41,7 +41,9 @@ db-remove: db-stop
 
 db-restart: db-stop db-start
 
-serve: db-start run
+serve: 
+	@make db-start 
+	@air
 
 help:
 	@echo "Available commands:"
