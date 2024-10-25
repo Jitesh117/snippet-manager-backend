@@ -14,6 +14,7 @@ import (
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
 		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 		return
 	}
@@ -46,6 +47,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
 		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 		return
 	}
@@ -82,6 +84,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 
 func DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
+		w.Header().Set("Allow", "DELETE")
 		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 		return
 	}
@@ -114,6 +117,7 @@ func DeleteUserByID(w http.ResponseWriter, r *http.Request) {
 
 func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
+		w.Header().Set("Allow", "PUT")
 		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 		return
 	}

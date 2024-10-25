@@ -20,6 +20,7 @@ func HandleSnippets(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		createSnippet(w, r)
 	default:
+		w.Header().Set("Allow", "GET, POST")
 		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 	}
 }
@@ -72,6 +73,7 @@ func createSnippet(w http.ResponseWriter, r *http.Request) {
 
 func GetSnippetByLanguage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
 		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 		return
 	}
@@ -118,6 +120,7 @@ func GetSnippetByLanguage(w http.ResponseWriter, r *http.Request) {
 
 func GetSortedSnippets(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
 		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 		return
 	}

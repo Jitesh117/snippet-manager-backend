@@ -29,6 +29,7 @@ func HandleSnippet(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		deleteSnippetByID(w, r, snippetID)
 	default:
+		w.Header().Set("Allow", "GET, PUT, DELETE")
 		http.Error(w, constants.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 	}
 }
