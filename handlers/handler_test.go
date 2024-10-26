@@ -12,7 +12,7 @@ import (
 	"github.com/Jitesh117/snippet-manager-backend/models"
 )
 
-var jwtTokenString = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mjk2NzE3NTEsInVzZXJfaWQiOiJmOTI3ZTgzNy1kNTVmLTQ1YjAtODM4Ni1mZjQ3NjQ0OGZjNTcifQ.wgKQAKM5u09MN1izKPKUGFrzM1LHzi_MJETnNTRREw4"
+var jwtTokenString, snippetID string
 
 func TestMain(m *testing.M) {
 	database.InitDB()
@@ -39,6 +39,16 @@ func TestRegister(t *testing.T) {
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
+	var response struct {
+		Token string `json:"token"`
+	}
+
+	err = json.NewDecoder(rr.Body).Decode(&response)
+	if err != nil {
+		t.Fatalf("failed to parse response body: %v", err)
+	}
+
+	jwtTokenString = response.Token
 }
 
 func TestLogin(t *testing.T) {
@@ -127,10 +137,16 @@ func TestCreateSnippet(t *testing.T) {
 	if status := rr.Code; status != http.StatusCreated {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusCreated)
 	}
+	var responseSnippet models.Snippet
+	err = json.NewDecoder(rr.Body).Decode(&responseSnippet)
+	if err != nil {
+		t.Fatalf("failed to parse response body: %v", err)
+	}
+
+	snippetID = responseSnippet.SnippetId.String()
 }
 
 func TestGetSnippetByID(t *testing.T) {
-	snippetID := "2d8b9384-a551-4a09-96d4-f9c1678a778c"
 	req, err := http.NewRequest(http.MethodGet, "/snippets/"+snippetID, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -148,7 +164,6 @@ func TestGetSnippetByID(t *testing.T) {
 }
 
 func TestUpdateSnippetByID(t *testing.T) {
-	snippetID := "2d8b9384-a551-4a09-96d4-f9c1678a778c"
 	snippet := models.Snippet{
 		Title:    "Updated Snippet",
 		Language: "Go",
