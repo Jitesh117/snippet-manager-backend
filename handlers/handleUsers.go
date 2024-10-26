@@ -42,7 +42,8 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("userID: ", userID)
 	log.Println("user signed in!")
-	json.NewEncoder(w).Encode(token)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
 func LoginUser(w http.ResponseWriter, r *http.Request) {
@@ -79,6 +80,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("user logged in!")
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
