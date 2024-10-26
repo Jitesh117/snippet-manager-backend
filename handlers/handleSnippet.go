@@ -101,9 +101,12 @@ func deleteSnippetByID(w http.ResponseWriter, r *http.Request, snippetID uuid.UU
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, constants.ErrSnippetNotFound, http.StatusBadRequest)
+			return
 		}
 		http.Error(w, constants.ErrFailedToDeleteSnippet, http.StatusInternalServerError)
+		return
 	}
 	log.Println("snippet deleted from DB")
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(snippet)
 }
